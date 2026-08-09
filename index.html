@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bird Tower Defense - 수집형 타워 디펜스</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+  <!-- 배경 디테일 반짝임 효과 -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div id="app" class="glass-container">
+    <!-- 상단 게임 헤더 -->
+    <header class="game-header">
+      <div class="logo">
+        <span class="logo-highlight">BIRD</span> TOWER DEFENSE
+      </div>
+      <div class="stats-container">
+        <div class="stat-badge coin-badge" title="인런 코인">
+          <span class="stat-icon">🪙</span>
+          <span id="player-coins">150</span>
+        </div>
+        <div class="stat-badge feather-badge" title="깃털 (메인 재화)">
+          <span class="stat-icon">🪶</span>
+          <span id="player-feathers">300</span>
+        </div>
+        <div class="stat-badge gem-badge" title="젬">
+          <span class="stat-icon">💎</span>
+          <span id="player-gems">50</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="game-content">
+      <!-- 1. 타워 디펜스 탭 -->
+      <section id="tab-defense" class="tab-pane active">
+        <div class="defense-layout">
+          <div class="canvas-wrapper">
+            <canvas id="game-canvas" width="800" height="480"></canvas>
+            <div id="game-overlay" class="game-overlay-hidden">
+              <div class="overlay-content">
+                <h2 id="overlay-title">GAME OVER</h2>
+                <p id="overlay-subtitle">웨이브에서 성문이 파괴되었습니다.</p>
+                <button id="btn-restart" class="btn btn-primary">다시 도전</button>
+              </div>
+            </div>
+          </div>
+          <div class="defense-controls glass-panel">
+            <div class="wave-info">
+              <h3>WAVE <span id="current-wave">1 / 25</span></h3>
+              <p>성 내구도: <span id="gate-hp">20 / 20</span></p>
+              <div class="progress-bar">
+                <div id="gate-hp-bar" class="progress-fill" style="width: 100%;"></div>
+              </div>
+            </div>
+            <div class="control-buttons">
+              <button id="btn-start-wave" class="btn btn-success btn-glow">웨이브 시작 / 넘기기</button>
+              <button id="btn-speed-up" class="btn btn-secondary">속도 x1</button>
+            </div>
+            <div class="placement-selector">
+              <div class="placement-header">
+                <h4>배치할 새 선택 (자유 위치 클릭)</h4>
+              </div>
+              <div id="defense-deck" class="deck-slots">
+                <!-- 동적 덱 슬롯 -->
+              </div>
+              <p class="helper-text">💡 새를 선택 후 맵 상의 자유로운 위치를 클릭하여 배치하세요 (경로 외 위치).</p>
+            </div>
+            <!-- 타워 레벨업/판매 선택 창 -->
+            <div id="selected-tower-panel" class="selected-tower-panel hidden">
+              <div class="panel-header">
+                <span id="sel-tower-name">참새</span>
+              </div>
+              <div class="panel-body">
+                <p>인런 레벨: <span id="sel-tower-level">1</span></p>
+                <p>공격력: <span id="sel-tower-dmg">10</span></p>
+                <p>공격속도: <span id="sel-tower-speed">1.0</span>/s</p>
+                <button id="btn-upgrade-tower" class="btn btn-primary btn-sm">업그레이드</button>
+                <button id="btn-sell-tower" class="btn btn-danger btn-sm">회수/판매</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. 농장 & 3중 돌연변이 탭 -->
+      <section id="tab-farm" class="tab-pane">
+        <div class="farm-container">
+          <div class="farm-header">
+            <h2>🌱 방치형 씨앗 농장 & 3중 돌연변이</h2>
+            <div id="weather-indicator" class="weather-badge">☀️ 맑음 (20:00)</div>
+          </div>
+          <div id="farm-grid" class="farm-grid">
+            <!-- 동적 밭 슬롯 -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 알 부화소 탭 -->
+      <section id="tab-hatchery" class="tab-pane">
+        <div class="hatchery-container">
+          <div class="hatchery-header">
+            <h2>🥚 알 부화소</h2>
+            <p>획득한 알을 부화시켜 강력한 아군 새를 수집하세요!</p>
+          </div>
+          <div id="egg-inventory-list" class="shop-grid">
+            <!-- 보유 알 목록 -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. 도감 & 전투 덱 탭 -->
+      <section id="tab-inventory" class="tab-pane">
+        <div class="inventory-container">
+          <div class="inventory-header-row">
+            <h2>🦅 새 도감 & 6마리 전투 덱 설정</h2>
+            <div class="deck-setup-info">
+              <span>장착 중인 전투 덱:</span>
+              <div id="active-deck-preview" class="deck-preview-row"></div>
+            </div>
+          </div>
+          <div class="inventory-filters">
+            <button class="filter-btn active" data-grade="all">전체</button>
+            <button class="filter-btn" data-grade="normal">일반</button>
+            <button class="filter-btn" data-grade="uncommon">고급</button>
+            <button class="filter-btn" data-grade="rare">레어</button>
+            <button class="filter-btn" data-grade="epic">에픽</button>
+            <button class="filter-btn" data-grade="legendary">전설</button>
+            <button class="filter-btn" data-grade="mythic">신화</button>
+          </div>
+          <div class="inventory-layout">
+            <div id="bird-grid" class="bird-grid">
+              <!-- 새 카드 리스트 -->
+            </div>
+            <div id="bird-detail-panel" class="bird-detail-panel glass-panel hidden">
+              <div class="detail-header">
+                <div id="detail-bird-svg" class="detail-bird-svg-container"></div>
+                <div class="detail-title-info">
+                  <h3 id="detail-bird-name">참새</h3>
+                  <span id="detail-bird-grade" class="grade-badge">일반</span>
+                  <div class="detail-level">보유: <span id="detail-bird-count">1</span>마리</div>
+                </div>
+              </div>
+              <div class="detail-body">
+                <div class="stat-row"><span>기본 ATK</span><span id="detail-stat-atk">1</span></div>
+                <div class="stat-row"><span>공격 간격</span><span id="detail-stat-spd">1.02s</span></div>
+                <div class="stat-row"><span>사거리</span><span id="detail-stat-rng">120</span></div>
+                <div class="stat-description">
+                  <p id="detail-bird-desc">기본적인 단일 공격형 새입니다.</p>
+                </div>
+                <div class="detail-actions">
+                  <button id="btn-equip-bird" class="btn btn-success w-100">전투 덱 장착</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 몬스터 도감 -->
+          <div class="monster-codex-section" style="margin-top: 2rem;">
+            <h3>👾 몬스터 도감 (12종 & 4종 보스 + 큐빅)</h3>
+            <div id="monster-codex-grid" class="shop-grid">
+              <!-- 몬스터 도감 카드 -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. 상점 탭 (GDD 6-1 6칸 진열) -->
+      <section id="tab-shop" class="tab-pane">
+        <div class="shop-container">
+          <div class="shop-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>🛒 상점 (알 3칸 + 씨앗 3칸)</h3>
+            <div>
+              <span id="reset-count-label" style="font-size: 13px; color: var(--text-muted);">오늘 새로고침: 0/5회</span>
+              <button id="btn-reset-shop" class="btn btn-warning btn-sm" style="margin-left: 8px;">새로고침 (💎 10)</button>
+            </div>
+          </div>
+          <div id="shop-slots-container" class="shop-grid" style="margin-top: 1rem;">
+            <!-- 6개 진열 칸 -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 하단 탭 내비게이션 바 -->
+    <footer class="game-footer">
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-target="tab-defense">
+          <span class="tab-icon">⚔️</span>
+          <span class="tab-text">방어전</span>
+        </button>
+        <button class="nav-tab" data-target="tab-farm">
+          <span class="tab-icon">🌱</span>
+          <span class="tab-text">농장</span>
+        </button>
+        <button class="nav-tab" data-target="tab-hatchery">
+          <span class="tab-icon">🥚</span>
+          <span class="tab-text">부화소</span>
+        </button>
+        <button class="nav-tab" data-target="tab-inventory">
+          <span class="tab-icon">🦅</span>
+          <span class="tab-text">도감/덱</span>
+        </button>
+        <button class="nav-tab" data-target="tab-shop">
+          <span class="tab-icon">🛒</span>
+          <span class="tab-text">상점</span>
+        </button>
+      </nav>
+    </footer>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
